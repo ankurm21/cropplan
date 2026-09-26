@@ -1,56 +1,101 @@
-# Krishi AI - Crop Plan Backend
+# Krishi AI - Precision Agriculture Backend
 
-The backend engine for the Krishi AI Precision Agriculture platform. 
+The central intelligence and data management engine for the Krishi AI Precision Agriculture platform. 
 
-This repository contains the Django backend responsible for managing agricultural data, weather context, soil analysis, and the RAG (Retrieval-Augmented Generation) Chatbot system.
+This repository contains the Django backend responsible for modeling geographic land parcels, caching geospatial environmental data, and powering a highly context-aware Retrieval-Augmented Generation (RAG) advisory chatbot designed specifically for Indian agriculture.
 
-## 🚀 Key Features
+---
 
-*   **RAG Engine V2:** An advanced, highly optimized RAG system designed specifically for Indian farmers.
-*   **Model Waterfall Fallback:** Automatically handles rate limits by seamlessly cascading from `qwen/qwen3.8-27b` to `openai/gpt-oss-20b` and `openai/gpt-oss-120b`.
-*   **Memory Optimization:** Retains localized chronological context using Django SQLite sessions to bypass token payload constraints while perfectly preserving conversational state.
-*   **Vector Search & Document Retrieval:** Ingests and queries thousands of pages of precision agriculture PDFs to provide highly accurate, cited agronomic advice.
-*   **Django Admin Integration:** Complete graphical interface to monitor session histories and debug RAG generation flows.
+## 🏗️ Architecture Overview
 
-## 🛠️ Tech Stack
+The backend acts as the orchestrator between user interfaces, external environmental APIs, and Large Language Models. 
 
-*   **Framework:** Django / Django REST Framework
-*   **Database:** SQLite (Relational), ChromaDB (Vector)
-*   **LLM Providers:** Groq API, OpenRouter
-*   **AI Tooling:** Langchain, HuggingFace Embeddings
+When a farmer asks a question about their crop, the system doesn't just pass the question to an LLM. It first executes a spatial data pipeline:
+1. **Locates the Farm:** Retrieves the farmer's specific field boundaries from the PostGIS spatial database.
+2. **Gathers Environment Context:** Checks the geospatial cache for weather trends (Open-Meteo) and edaphic soil profiles (SoilGrids) for that exact coordinate.
+3. **Retrieves Agronomic Science:** Queries a local ChromaDB vector store containing thousands of pages of Indian agricultural research and best practices.
+4. **Synthesizes:** Compiles the weather, soil, literature, and conversation history into a massive context window.
+5. **Generates Advice:** Routes the highly-enriched prompt through an advanced model waterfall to generate hyper-personalized agronomic advice.
 
-## ⚙️ Setup Instructions
+---
 
-### 1. Environment Variables
-Create a `.env` file in the `backend/` directory:
+## 🧩 Core Modules (Django Apps)
+
+### `lands` - Spatial Farm Modeling
+Manages the geographic representation of farmer fields.
+* Uses GeoDjango and PostGIS to store farm locations as `PointField` and boundaries as `PolygonField`.
+* Tracks area (hectares) and spatial relationships for mapping.
+
+### `data` - Geospatial Environmental Cache
+A critical optimization layer to prevent redundant external API calls and handle rate limits.
+* **WeatherCache:** Stores precipitation, radiation, and temperature metrics from Open-Meteo tied to a spatial coordinate.
+* **SoilCache:** Stores deep soil profiles (pH, Organic Carbon, Bulk Density, Texture, NPK) fetched from ISRIC SoilGrids.
+* Reuses cached data for multiple farms within a 2km radius to save bandwidth and compute.
+
+### `rag` - The RAG Engine V2
+The brain of the Krishi AI advisory system.
+* **Ingestion Pipeline:** Chunks and embeds massive PDF datasets (using HuggingFace embeddings) into a local ChromaDB vector store.
+* **Model Waterfall:** Intelligently routes requests to bypass rate limits (like Groq's 429 errors). Cascades from `qwen3.8-27b` to `gpt-oss-20b` down to `gpt-oss-120b` automatically upon failure.
+* **Memory Management:** Persists entire conversation trajectories (`ChatSession` & `ChatTurn`) into relational SQLite. It filters and injects rolling chronological context into the LLM without exploding token limits.
+
+### `accounts` - Identity
+* Custom User models and authentication routing for farmers and administrators.
+
+---
+
+## 🛠️ Technology Stack
+
+* **Core Framework:** Django 4.x & Django REST Framework (DRF)
+* **Spatial & Relational Database:** GeoDjango / SQLite (dev) / PostGIS (prod capability)
+* **Vector Database:** ChromaDB (Local persistence)
+* **LLM Orchestration:** Langchain, HuggingFace Local Embeddings
+* **LLM Providers:** Groq API, OpenRouter
+* **External APIs:** Open-Meteo (Weather), SoilGrids (Soil)
+
+---
+
+## ⚙️ Setup & Installation
+
+### 1. Environment Configuration
+Create a `.env` file in the `backend/` directory. Do **not** commit this file.
 ```env
-# Add your specific keys here
-GROQ_API_KEY=your_key_here
-OPENROUTER_API_KEY=your_key_here
+# API Keys for LLM Generation
+GROQ_API_KEY=your_groq_key_here
+OPENROUTER_API_KEY=your_openrouter_key_here
 ```
 
-### 2. Installation
+### 2. Virtual Environment & Dependencies
 ```bash
-# Create a virtual environment (optional but recommended)
+# Create and activate a virtual environment
 python3 -m venv .venv_linux
 source .venv_linux/bin/activate
 
-# Install dependencies
+# Install all backend packages
 pip install -r requirements.txt
+```
 
+### 3. Database Initialization
+```bash
 # Move into the Django root
 cd backend/
 
-# Run migrations
+# Run spatial and relational migrations
 python manage.py migrate
+```
 
-# Start the development server
+### 4. Running the Server
+```bash
+# Start the Django development server
 python manage.py runserver
 ```
+The API will be available at `http://localhost:8000/`.
 
-### 3. Admin Access
-The SQLite database stores complete conversation logs and session IDs.
-To view or manage chats, log into the local Django admin:
-```bash
-http://localhost:8000/admin
-```
+---
+
+## 📊 Administration & Debugging
+
+Krishi AI heavily utilizes the Django Admin panel for observability. 
+By navigating to `http://localhost:8000/admin`, administrators can:
+* Inspect raw `WeatherCache` and `SoilCache` geographic entries.
+* View exact coordinates and boundaries of registered `Land` fields.
+* Read through full `ChatSession` transcripts to debug the LLM's RAG performance and history retention.
