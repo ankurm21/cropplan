@@ -12,24 +12,24 @@ Krishi AI acts as a smart orchestrator. It intercepts farmer queries, deeply enr
 
 ```mermaid
 graph TD
-    Client[Farmer UI] --> API[Django REST Framework]
+    Client["Farmer UI"] --> API["Django REST Framework"]
     
     subgraph Krishi Backend Engine
-        API --> Lands[Lands Module\n(Spatial Boundaries)]
-        API --> Data[Data Module\n(Environmental Caching)]
-        API --> RAG[RAG Engine V2\n(LLM Orchestrator)]
+        API --> Lands["Lands Module<br/>(Spatial Boundaries)"]
+        API --> Data["Data Module<br/>(Environmental Caching)"]
+        API --> RAG["RAG Engine V2<br/>(LLM Orchestrator)"]
     end
     
-    Lands --> RelationalDB[(Relational DB\nPostGIS / SQLite)]
+    Lands --> RelationalDB[("Relational DB<br/>PostGIS / SQLite")]
     Data --> RelationalDB
     
-    Data -- "Cache Miss (Weather)" --> OpenMeteo[Open-Meteo API]
-    Data -- "Cache Miss (Soil)" --> SoilGrids[ISRIC SoilGrids]
+    Data -- "Cache Miss (Weather)" --> OpenMeteo["Open-Meteo API"]
+    Data -- "Cache Miss (Soil)" --> SoilGrids["ISRIC SoilGrids"]
     
-    RAG --> Chroma[(ChromaDB\nVector Store)]
+    RAG --> Chroma[("ChromaDB<br/>Vector Store")]
     RAG --> RelationalDB
-    RAG -- "Primary LLM Call" --> Groq[Groq API\nqwen/llama]
-    Groq -- "429 Rate Limit Fallback" --> OpenRouter[OpenRouter API\ngpt-oss]
+    RAG -- "Primary LLM Call" --> Groq["Groq API<br/>qwen/llama"]
+    Groq -- "429 Rate Limit Fallback" --> OpenRouter["OpenRouter API<br/>gpt-oss"]
 ```
 
 ---
