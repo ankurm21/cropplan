@@ -1,0 +1,34 @@
+# Environment
+.env
+.env.local
+.env.production
+.env.backup
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+
+# SQLite
+db.sqlite3
+
+# ChromaDB
+rag/chroma_db/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temp files
+_temp_page_*.pdf
+tmp_*.py
+*.backup
+*queue_state.json
+enrich_progress.json
+ingest_ledger.json
+.venv_linux/

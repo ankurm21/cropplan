@@ -1,0 +1,18 @@
+Django>=5.0
+djangorestframework
+djangorestframework-simplejwt
+django-cors-headers
+psycopg2-binary
+python-dotenv
+google-genai
+openai
+chromadb
+sentence-transformers
+# Add other dependencies if they were being used by detection/lands
+# Based on earlier view, detection might use torch, rasterio, etc.
+torch
+rasterio
+shapely
+pyproj
+pillow
+json-repair
